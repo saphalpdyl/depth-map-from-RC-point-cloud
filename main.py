@@ -83,6 +83,7 @@ def main():
     principal_point_x = (camera_calibration.principal_point_u * 0.5 + 0.5) * nx
     principal_point_y = (camera_calibration.principal_point_v * 0.5 + 0.5) * ny
 
+    # Camera intrinsic matrix
     K = np.array([
         [focal_length_pixels, 0, principal_point_x],
         [0, focal_length_pixels * camera_calibration.aspect_ratio, principal_point_y],
@@ -115,7 +116,7 @@ def main():
 
     points_after_VP = viewport_matrix @ points_normalized
 
-    fig, [ax, ax2] = plt.subplots(1, 2, figsize=(9, 9))
+    _, [ax, ax2] = plt.subplots(1, 2, figsize=(9, 9))
 
     ax.scatter(points_after_VP[0], points_after_VP[1], 
                c=colors, marker='.', s=1)
