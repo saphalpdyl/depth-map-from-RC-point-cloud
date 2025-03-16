@@ -19,42 +19,28 @@ XMP_IMAGE_METADATA_FOLDER_PATH = 'sample/images/'
 RC_CAMERA_PARAMETERS_FILE_PATH = 'sample/camera_parameters.csv'
 RC_POINT_CLOUD_FILE_PATH = 'sample/point_cloud.ply'
 
-def main():
-    # Check for args
-    image_file_path = None
-    if len(sys.argv) > 1:
-        image_file_path = sys.argv[1]
-
-    camera_paramters = CameraParameter.from_parameters_file(RC_CAMERA_PARAMETERS_FILE_PATH)
-
-    camera = None
-    if image_file_path is None:
-        camera = random.choice(list(camera_paramters))
-    else:
-        found_camera_parameter = False
-        for params in camera_paramters:
-            if params.name == image_file_path.split('/')[-1]:
-                camera = params
-                found_camera_parameter = True
-
-        if not found_camera_parameter:
-            print(f'Camera parameter not found for {image_file_path}')
-            return
-
-    if camera is None: return
-
-    # Load reference image
-    # Referenced from: https://stackoverflow.com/questions/54395735/how-to-work-with-heic-image-file-types-in-python
-    heif_file = pillow_heif.read_heif(os.path.join(HEIF_IMAGE_FOLDER_PATH, camera.name))
-    reference_image = Image.frombytes(
-        heif_file.mode,
-        heif_file.size,
-        heif_file.data,
-        "raw",
-    )
-
-    camera_calibration = CameraCalibration.from_file(os.path.join(XMP_IMAGE_METADATA_FOLDER_PATH, camera.name.split('.')[0] + '.xmp'))
-
+def plot_point_cloud_projection(camera_calibration, reference_image, 
+                               points, colors, ax, ax2):
+    """
+    Plot point cloud projection and reference image on given axes.
+    
+    Parameters:
+    -----------
+    camera_calibration : CameraCalibration object
+        The camera calibration data
+    camera_parameter : CameraParameter object
+        The camera parameter data
+    reference_image : PIL.Image
+        The reference image to display
+    points : numpy.ndarray
+        The 3D point cloud points
+    colors : numpy.ndarray
+        The colors corresponding to the points
+    ax : matplotlib.axes.Axes
+        The axis for plotting the point cloud projection
+    ax2 : matplotlib.axes.Axes
+        The axis for plotting the reference image
+    """
     # Juicy mathematics
     rotation_matrix = np.identity(4, dtype=np.float32)
     rotation_matrix[:3, :3] = camera_calibration.rotation_matrix
@@ -100,12 +86,9 @@ def main():
     projection_matrix[2, 3] = -2 * far * near / (far - near)
     projection_matrix[3, 2] = -1
 
-    # Reading point cloud
-    pcd = o3d.io.read_point_cloud(RC_POINT_CLOUD_FILE_PATH)
-    points = np.asarray(pcd.points)
-    colors = np.asarray(pcd.colors)
-
-    points = np.hstack((points, np.ones((points.shape[0], 1))))
+    # Ensure points are in homogeneous coordinates
+    if points.shape[1] == 3:
+        points = np.hstack((points, np.ones((points.shape[0], 1))))
 
     points_after_CM = camera_matrix @ points.T
     points_after_PM = projection_matrix @ points_after_CM
@@ -116,19 +99,77 @@ def main():
 
     points_after_VP = viewport_matrix @ points_normalized
 
-    _, [ax, ax2] = plt.subplots(1, 2, figsize=(9, 9))
-
+    # Plot point cloud projection
     ax.scatter(points_after_VP[0], points_after_VP[1], 
-               c=colors, marker='.', s=1)
+              c=colors, marker='.', s=1)
     ax.set_xlim(0, nx)
     ax.set_ylim(0, ny)
     ax.set_title(f"Point cloud projection")
     ax.set_aspect('equal', adjustable='box')
 
-    # Open image from path using Pillow
-    ax2.imshow(reference_image)
-    ax2.set_title("Reference image")
+    if ax2:
+        # Plot reference image
+        ax2.imshow(reference_image) 
+        ax2.set_title("Reference image")
 
+def do_stuff_with_camera(camera, points, colors, ax, ax2):
+    # Load reference image
+    # Referenced from: https://stackoverflow.com/questions/54395735/how-to-work-with-heic-image-file-types-in-python
+    heif_file = pillow_heif.read_heif(os.path.join(HEIF_IMAGE_FOLDER_PATH, camera.name))
+    reference_image = Image.frombytes(
+        heif_file.mode,
+        heif_file.size,
+        heif_file.data,
+        "raw",
+    )
+
+    camera_calibration = CameraCalibration.from_file(os.path.join(XMP_IMAGE_METADATA_FOLDER_PATH, camera.name.split('.')[0] + '.xmp'))
+    plot_point_cloud_projection(camera_calibration, reference_image, points, colors, ax, ax2)
+    pass
+
+def main():
+    # Check for args
+    image_file_path = None
+    if len(sys.argv) > 1:
+        image_file_path = sys.argv[1]
+
+    camera_parameters = CameraParameter.from_parameters_file(RC_CAMERA_PARAMETERS_FILE_PATH)
+
+    cameras = None
+    if image_file_path is None:
+        params = list(camera_parameters)
+        cameras = []
+        for i in range(4):
+            cameras.append(random.choice(params))
+    else:
+        found_camera_parameter = False
+        for params in camera_parameters:
+            if params.name == image_file_path.split('/')[-1]:
+                cameras = [params]
+                found_camera_parameter = True
+
+        if not found_camera_parameter:
+            print(f'Camera parameter not found for {image_file_path}')
+            return
+
+    if cameras is None: return
+
+    # Reading point cloud
+    pcd = o3d.io.read_point_cloud(RC_POINT_CLOUD_FILE_PATH)
+    points = np.asarray(pcd.points)
+    colors = np.asarray(pcd.colors)
+
+    if len(cameras) > 1:
+        fig, axes = plt.subplots(2, 4, figsize=(18, 9))
+        axes_pairs = axes.reshape(4, 2)
+
+        for i, camera in enumerate(cameras):
+            do_stuff_with_camera(camera, points, colors, axes_pairs[i][0], axes_pairs[i][1])
+    else:
+        camera = cameras[0]
+        _, [ax, ax2] = plt.subplots(1, 2, figsize=(9, 9))
+        do_stuff_with_camera(camera, points, colors, ax, ax2)
+    
     plt.show()
 
 if __name__ == "__main__":
