@@ -3,10 +3,14 @@ import matplotlib.pyplot as plt
 from matplotlib.image import imread
 import random
 
+from PIL import Image
+import pillow_heif
+
+import os
 import sys
 
-from .camera_parameter import CameraParameter
-from .camera_calibration import CameraCalibration
+from camera_parameter import CameraParameter
+from camera_calibration import CameraCalibration
 
 # File paths
 HEIF_IMAGE_FOLDER_PATH = 'sample/images/'
@@ -37,6 +41,15 @@ def main():
             return
 
     if camera is None: return
+
+    # Load reference image
+    heif_file = pillow_heif.read_heif(os.path.join(HEIF_IMAGE_FOLDER_PATH, camera.name))
+    image = Image.frombytes(
+        heif_file.mode,
+        heif_file.size,
+        heif_file.data,
+        "raw",
+    )
 
 if __name__ == "__main__":
     main()
