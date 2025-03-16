@@ -2,7 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 @dataclass
-class Camera:
+class CameraParameter:
     name: str
     x: float
     y: float
