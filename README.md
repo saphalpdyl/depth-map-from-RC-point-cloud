@@ -6,9 +6,9 @@ _Note: The depth part is still in the making_
 ## How to use your own data?
 Currently, you can run the program to render the point cloud on `sample` data that I included of my little workspace. However, if you want to experiment with you own data, you require the following files/exports:
 - Point cloud in `.ply` format
-- Camera parameters in `.csv` format
 - Images folder in `.heif` format
 - Camera calibration data folder in `.xmp` format
+- ~~Camera parameters in `.csv` format~~ ( _No longer required since metadatas files are primarily used for camera intrinsics and extrinsics_ )
 
 ---
 #### Point cloud projection + Depth map
