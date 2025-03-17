@@ -3,6 +3,9 @@ from dataclasses import dataclass
 
 @dataclass
 class CameraParameter:
+    """
+        @deprecated - cameraParameteres are no longer used instead .xmp metadata files are automatically extracted
+    """
     name: str
     x: float
     y: float

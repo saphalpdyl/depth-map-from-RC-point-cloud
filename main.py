@@ -8,14 +8,16 @@ import pillow_heif
 import os
 import sys
 
-from camera_parameter import CameraParameter
 from camera_calibration import CameraCalibration
+from utils import get_files_with_extension
 
 # File paths
 HEIF_IMAGE_FOLDER_PATH = 'sample/images/'
 XMP_IMAGE_METADATA_FOLDER_PATH = 'sample/images/'
-RC_CAMERA_PARAMETERS_FILE_PATH = 'sample/camera_parameters.csv'
 RC_POINT_CLOUD_FILE_PATH = 'sample/point_cloud.ply'
+
+# @deprecated - cameraParameteres are no longer used instead .xmp metadata files are automatically extracted
+RC_CAMERA_PARAMETERS_FILE_PATH = 'sample/camera_parameters.csv'
 
 def plot_point_cloud_projection(camera_calibration, reference_image, 
                                points, colors, color_ax, reference_ax, depth_ax):
@@ -112,6 +114,7 @@ def plot_point_cloud_projection(camera_calibration, reference_image,
         normalized_depths = 1 - normalized_depths
 
         # Plot point cloud projection
+        depth_ax.set_facecolor('black')
         depth_ax.scatter(points_after_VP[0], points_after_VP[1], 
                   c=normalized_depths, marker='.', s=1, cmap="gray")
         depth_ax.set_xlim(0, nx)
@@ -124,10 +127,10 @@ def plot_point_cloud_projection(camera_calibration, reference_image,
         reference_ax.imshow(reference_image) 
         reference_ax.set_title("Reference image")
 
-def do_stuff_with_camera(camera, points, colors, color_ax, reference_ax, depth_ax):
+def do_stuff_with_camera(reference_id, points, colors, color_ax, reference_ax, depth_ax):
     # Load reference image
     # Referenced from: https://stackoverflow.com/questions/54395735/how-to-work-with-heic-image-file-types-in-python
-    heif_file = pillow_heif.read_heif(os.path.join(HEIF_IMAGE_FOLDER_PATH, camera.name))
+    heif_file = pillow_heif.read_heif(os.path.join(HEIF_IMAGE_FOLDER_PATH, reference_id + '.heif'))
     reference_image = Image.frombytes(
         heif_file.mode,
         heif_file.size,
@@ -135,7 +138,7 @@ def do_stuff_with_camera(camera, points, colors, color_ax, reference_ax, depth_a
         "raw",
     )
 
-    camera_calibration = CameraCalibration.from_file(os.path.join(XMP_IMAGE_METADATA_FOLDER_PATH, camera.name.split('.')[0] + '.xmp'))
+    camera_calibration = CameraCalibration.from_file(os.path.join(XMP_IMAGE_METADATA_FOLDER_PATH, reference_id + '.xmp'))
     plot_point_cloud_projection(camera_calibration, reference_image, points, colors, color_ax, reference_ax, depth_ax)
     pass
 
@@ -145,42 +148,41 @@ def main():
     if len(sys.argv) > 1:
         image_file_path = sys.argv[1]
 
-    camera_parameters = CameraParameter.from_parameters_file(RC_CAMERA_PARAMETERS_FILE_PATH)
+    # camera_parameters = CameraParameter.from_parameters_file(RC_CAMERA_PARAMETERS_FILE_PATH)
+    image_file_name_list = [file.split('.')[0] for file in get_files_with_extension(XMP_IMAGE_METADATA_FOLDER_PATH, '.xmp')]
 
-    cameras = None
+    selected_reference_ids = None
     if image_file_path is None:
-        params = list(camera_parameters)
-        cameras = []
+        selected_reference_ids = []
         for i in range(2):
-            cameras.append(random.choice(params))
+            selected_reference_ids.append(random.choice(image_file_name_list))
     else:
         found_camera_parameter = False
-        for params in camera_parameters:
-            if params.name == image_file_path.split('/')[-1]:
-                cameras = [params]
-                found_camera_parameter = True
+        if image_file_path.split('/')[-1].split('.')[0] in image_file_name_list:
+            selected_reference_ids = [image_file_path.split('/')[-1].split('.')[0]]
+            found_camera_parameter = True
 
         if not found_camera_parameter:
             print(f'Camera parameter not found for {image_file_path}')
             return
 
-    if cameras is None: return
+    if selected_reference_ids is None: return
 
     # Reading point cloud
     pcd = o3d.io.read_point_cloud(RC_POINT_CLOUD_FILE_PATH)
     points = np.asarray(pcd.points)
     colors = np.asarray(pcd.colors)
 
-    if len(cameras) > 1:
+    if len(selected_reference_ids) > 1:
         _, axes = plt.subplots(2, 3, figsize=(18, 9))
         axes_pairs = axes.reshape(2, 3)
 
-        for i, camera in enumerate(cameras):
-            do_stuff_with_camera(camera, points, colors, axes_pairs[i][0], axes_pairs[i][1], axes_pairs[i][2])
+        for i, reference_id in enumerate(selected_reference_ids):
+            do_stuff_with_camera(reference_id, points, colors, axes_pairs[i][0], axes_pairs[i][1], axes_pairs[i][2])
     else:
-        camera = cameras[0]
+        reference_id = selected_reference_ids[0]
         _, [color_ax, reference_ax, depth_ax] = plt.subplots(1, 3, figsize=(9, 9))
-        do_stuff_with_camera(camera, points, colors, color_ax, reference_ax, depth_ax)
+        do_stuff_with_camera(reference_id, points, colors, color_ax, reference_ax, depth_ax)
     
     plt.show()
 
