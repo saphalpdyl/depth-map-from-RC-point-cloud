@@ -1,9 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.image import imread
 import random
 import open3d as o3d
-
 from PIL import Image
 import pillow_heif
 
@@ -20,10 +18,9 @@ RC_CAMERA_PARAMETERS_FILE_PATH = 'sample/camera_parameters.csv'
 RC_POINT_CLOUD_FILE_PATH = 'sample/point_cloud.ply'
 
 def plot_point_cloud_projection(camera_calibration, reference_image, 
-                               points, colors, ax, ax2):
+                               points, colors, color_ax, reference_ax, depth_ax):
     """
     Plot point cloud projection and reference image on given axes.
-    
     Parameters:
     -----------
     camera_calibration : CameraCalibration object
@@ -36,9 +33,9 @@ def plot_point_cloud_projection(camera_calibration, reference_image,
         The 3D point cloud points
     colors : numpy.ndarray
         The colors corresponding to the points
-    ax : matplotlib.axes.Axes
+    color_ax : matplotlib.axes.Axes
         The axis for plotting the point cloud projection
-    ax2 : matplotlib.axes.Axes
+    reference_ax : matplotlib.axes.Axes
         The axis for plotting the reference image
     """
     # Juicy mathematics
@@ -100,19 +97,34 @@ def plot_point_cloud_projection(camera_calibration, reference_image,
     points_after_VP = viewport_matrix @ points_normalized
 
     # Plot point cloud projection
-    ax.scatter(points_after_VP[0], points_after_VP[1], 
+    color_ax.scatter(points_after_VP[0], points_after_VP[1], 
               c=colors, marker='.', s=1)
-    ax.set_xlim(0, nx)
-    ax.set_ylim(0, ny)
-    ax.set_title(f"Point cloud projection")
-    ax.set_aspect('equal', adjustable='box')
+    color_ax.set_xlim(0, nx)
+    color_ax.set_ylim(0, ny)
+    color_ax.set_title(f"Point cloud projection")
+    color_ax.set_aspect('equal', adjustable='box')
 
-    if ax2:
+    if depth_ax:
+        depths = points_after_CM[2]
+        min_depth = np.min(depths)
+        max_depth = np.max(depths)
+        normalized_depths = (depths - min_depth) / (max_depth - min_depth)
+        normalized_depths = 1 - normalized_depths
+
+        # Plot point cloud projection
+        depth_ax.scatter(points_after_VP[0], points_after_VP[1], 
+                  c=normalized_depths, marker='.', s=1, cmap="gray")
+        depth_ax.set_xlim(0, nx)
+        depth_ax.set_ylim(0, ny)
+        depth_ax.set_title(f"Depth map")
+        depth_ax.set_aspect('equal', adjustable='box')
+
+    if reference_ax:
         # Plot reference image
-        ax2.imshow(reference_image) 
-        ax2.set_title("Reference image")
+        reference_ax.imshow(reference_image) 
+        reference_ax.set_title("Reference image")
 
-def do_stuff_with_camera(camera, points, colors, ax, ax2):
+def do_stuff_with_camera(camera, points, colors, color_ax, reference_ax, depth_ax):
     # Load reference image
     # Referenced from: https://stackoverflow.com/questions/54395735/how-to-work-with-heic-image-file-types-in-python
     heif_file = pillow_heif.read_heif(os.path.join(HEIF_IMAGE_FOLDER_PATH, camera.name))
@@ -124,7 +136,7 @@ def do_stuff_with_camera(camera, points, colors, ax, ax2):
     )
 
     camera_calibration = CameraCalibration.from_file(os.path.join(XMP_IMAGE_METADATA_FOLDER_PATH, camera.name.split('.')[0] + '.xmp'))
-    plot_point_cloud_projection(camera_calibration, reference_image, points, colors, ax, ax2)
+    plot_point_cloud_projection(camera_calibration, reference_image, points, colors, color_ax, reference_ax, depth_ax)
     pass
 
 def main():
@@ -139,7 +151,7 @@ def main():
     if image_file_path is None:
         params = list(camera_parameters)
         cameras = []
-        for i in range(4):
+        for i in range(2):
             cameras.append(random.choice(params))
     else:
         found_camera_parameter = False
@@ -160,15 +172,15 @@ def main():
     colors = np.asarray(pcd.colors)
 
     if len(cameras) > 1:
-        fig, axes = plt.subplots(2, 4, figsize=(18, 9))
-        axes_pairs = axes.reshape(4, 2)
+        _, axes = plt.subplots(2, 3, figsize=(18, 9))
+        axes_pairs = axes.reshape(2, 3)
 
         for i, camera in enumerate(cameras):
-            do_stuff_with_camera(camera, points, colors, axes_pairs[i][0], axes_pairs[i][1])
+            do_stuff_with_camera(camera, points, colors, axes_pairs[i][0], axes_pairs[i][1], axes_pairs[i][2])
     else:
         camera = cameras[0]
-        _, [ax, ax2] = plt.subplots(1, 2, figsize=(9, 9))
-        do_stuff_with_camera(camera, points, colors, ax, ax2)
+        _, [color_ax, reference_ax, depth_ax] = plt.subplots(1, 3, figsize=(9, 9))
+        do_stuff_with_camera(camera, points, colors, color_ax, reference_ax, depth_ax)
     
     plt.show()
 
