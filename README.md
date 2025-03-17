@@ -11,6 +11,9 @@ Currently, you can run the program to render the point cloud on `sample` data th
 - Camera calibration data folder in `.xmp` format
 
 ---
+#### Point cloud projection + Depth map
+![image](https://github.com/user-attachments/assets/5c264dec-bf65-4be5-b10f-150447a31601)
+
 #### Sparse Point Cloud
 ![image](https://github.com/user-attachments/assets/d5a465be-9c69-4095-9a49-c983ae3c81e3)
 
