@@ -1,7 +1,7 @@
 # What is this ?
 This is a fun little project for calculating depth from a point cloud export from Reality Capture 1.5.
 
-_Note: The depth part is still in the making_
+~~_Note: The depth part is still in the making_~~ Done!
 
 ## How to use your own data?
 Currently, you can run the program to render the point cloud on `sample` data that I included of my little workspace. However, if you want to experiment with you own data, you require the following files/exports:
