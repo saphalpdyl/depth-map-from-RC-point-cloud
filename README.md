@@ -12,13 +12,15 @@ Currently, you can run the program to render the point cloud on `sample` data th
 
 ---
 #### Point cloud projection + Depth map
-![image](https://github.com/user-attachments/assets/5c264dec-bf65-4be5-b10f-150447a31601)
+![Projection + Depth Map Figure 1](https://github.com/user-attachments/assets/c43f16f2-368f-41e7-a6ba-621acf8661ba)
+![Projection + Depth Map Figure 1](https://github.com/user-attachments/assets/5c264dec-bf65-4be5-b10f-150447a31601)
+
 
 #### Sparse Point Cloud
-![image](https://github.com/user-attachments/assets/d5a465be-9c69-4095-9a49-c983ae3c81e3)
+![Projection with Sparse point cloud](https://github.com/user-attachments/assets/d5a465be-9c69-4095-9a49-c983ae3c81e3)
 
 #### Dense Point Cloud
-![image](https://github.com/user-attachments/assets/fea0214b-85eb-4d2c-b59f-a365376fa0ea)
+![Projection with Dense point cloud](https://github.com/user-attachments/assets/fea0214b-85eb-4d2c-b59f-a365376fa0ea)
 
 
 ## Sources
