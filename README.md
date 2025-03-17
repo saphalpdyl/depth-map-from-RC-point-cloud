@@ -10,7 +10,12 @@ Currently, you can run the program to render the point cloud on `sample` data th
 - Images folder in `.heif` format
 - Camera calibration data folder in `.xmp` format
 
+---
+#### Sparse Point Cloud
 ![image](https://github.com/user-attachments/assets/d5a465be-9c69-4095-9a49-c983ae3c81e3)
+
+#### Dense Point Cloud
+![image](https://github.com/user-attachments/assets/fea0214b-85eb-4d2c-b59f-a365376fa0ea)
 
 
 ## Sources
