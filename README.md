@@ -1,5 +1,4 @@
 # What is this ?
-This is a fun little project for calculating depth from a point cloud export from Reality Capture 1.5.
 
 [![Tech Stack](https://skillicons.dev/icons?i=python,pytorch,jupyter)]()
 
